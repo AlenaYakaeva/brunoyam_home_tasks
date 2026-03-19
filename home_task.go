@@ -36,7 +36,7 @@ func main() {
 
 	fmt.Println("Hard:")
 
-	data := []byte("more text")
+	data := []byte("more фтщерук text")
 
 	file := File{
 		Name: "hello.txt",
