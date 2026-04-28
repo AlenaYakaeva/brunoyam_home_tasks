@@ -1,8 +1,13 @@
 package tasks
 
 type Task struct {
-	ID          string `json:"taskID"`
-	Title       string `json:"taskTitle"`
-	Description string `json:"taskDescription"`
-	Status      string `json:"taskStatus"`
+	TID         string
+	Title       string
+	Description string
+	Status      string // TODO: сделать enum
+}
+type AddUpdateRequest struct {
+	Title       string `json:"title" validate:"required"`
+	Description string `json:"description"`
+	Status      string `json:"status" validate:"required"`
 }

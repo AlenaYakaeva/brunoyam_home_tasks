@@ -1,4 +1,4 @@
-package service
+package users
 
 import (
 	usersDomain "ToDoList/internal/domain/users"

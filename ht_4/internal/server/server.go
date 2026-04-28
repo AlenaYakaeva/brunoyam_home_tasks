@@ -1,6 +1,7 @@
 package server
 
 import (
+	"ToDoList/internal/server/tasks"
 	"ToDoList/internal/server/users"
 	"context"
 	"net/http"
@@ -12,12 +13,13 @@ type Server struct {
 	srv *http.Server
 }
 
-func New(addr string, usersService users.UserService) *Server {
+func New(addr string, usersService users.UserService, taskService tasks.TaskService) *Server {
 	srv := &http.Server{
 		Addr: addr,
 	}
 	uh := users.NewUserHandler(usersService)
-	r := configureRouter(uh)
+	th := tasks.NewTaskHandler(taskService)
+	r := configureRouter(uh, th)
 	srv.Handler = r
 
 	return &Server{
@@ -33,7 +35,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.srv.Shutdown(ctx)
 }
 
-func configureRouter(uh *users.UserHandler) *gin.Engine {
+func configureRouter(uh *users.UserHandler, th *tasks.TaskHandler) *gin.Engine {
 	r := gin.Default()
 
 	users := r.Group("/users")
@@ -43,5 +45,11 @@ func configureRouter(uh *users.UserHandler) *gin.Engine {
 	users.PUT("/:id", uh.UpdateUser)
 	users.DELETE("/:id", uh.DeleteUser)
 
+	tasks := r.Group("/tasks")
+	tasks.POST("/", th.AddTask)
+	tasks.GET("/", th.GetTasks)
+	tasks.GET("/:id", th.FindTaskByID)
+	tasks.PUT("/:id", th.UpdateTask)
+	tasks.DELETE("/:id", th.DeleteTask)
 	return r
 }
