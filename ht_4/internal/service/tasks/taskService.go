@@ -38,7 +38,7 @@ func (s *TaskService) AddTask(req tasksDomain.AddUpdateRequest) (string, error) 
 		TID:         uuid.NewString(),
 		Title:       req.Title,
 		Description: req.Description,
-		Status:      req.Status,
+		Status:      tasksDomain.ParseStatus(req.Status),
 	}
 
 	if err := s.repo.SaveTask(task); err != nil {
@@ -72,7 +72,7 @@ func (s *TaskService) UpdateTask(req tasksDomain.AddUpdateRequest, tid string) (
 		TID:         tid,
 		Title:       req.Title,
 		Description: req.Description,
-		Status:      req.Status,
+		Status:      tasksDomain.ParseStatus(req.Status),
 	}
 
 	updateTask, err := s.repo.UpdateTask(task, tid)

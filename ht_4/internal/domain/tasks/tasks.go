@@ -4,10 +4,10 @@ type Task struct {
 	TID         string
 	Title       string
 	Description string
-	Status      string // TODO: сделать enum
+	Status      Status
 }
 type AddUpdateRequest struct {
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description"`
-	Status      string `json:"status" validate:"required"`
+	Status      string `json:"status"`
 }
