@@ -7,12 +7,14 @@ import (
 
 	validator "github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Repository interface {
 	SaveUser(usersDomain.User) error
 	GetUsers() ([]usersDomain.User, error)
 	GetUserByID(string) (usersDomain.User, error)
+	GetUserByEmail(string) (usersDomain.User, error)
 	UpdateUser(usersDomain.User, string) (usersDomain.User, error)
 	DeleteUser(string) error
 }
@@ -34,17 +36,39 @@ func (s *UserService) RegisterUser(req usersDomain.RegisterRequest) (string, err
 		return "", fmt.Errorf(errors.IncorrectFieldValues, err)
 	}
 
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
 	user := usersDomain.User{
 		UID:      uuid.NewString(),
 		Name:     req.Name,
 		Email:    req.Email,
-		Password: req.Password,
+		Password: string(hash),
 	}
 
 	if err := s.repo.SaveUser(user); err != nil {
 		return "", err
 	}
 	return user.UID, nil
+}
+
+func (s *UserService) LoginUser(req usersDomain.LoginRequest) (usersDomain.User, error) {
+	if err := s.valid.Struct(req); err != nil {
+		return usersDomain.User{}, fmt.Errorf(errors.IncorrectFieldValues, err)
+	}
+
+	user, err := s.repo.GetUserByEmail(req.Email)
+	if err != nil {
+		return usersDomain.User{}, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if err != nil {
+		return usersDomain.User{}, errors.ErrInvalidCredentials
+	}
+
+	return user, nil
 }
 
 func (s *UserService) GetUsers() ([]usersDomain.User, error) {

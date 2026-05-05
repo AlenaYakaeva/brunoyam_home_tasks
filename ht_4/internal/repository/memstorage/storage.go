@@ -28,6 +28,15 @@ func (s *Storage) SaveUser(user usersDomain.User) error {
 	s.users[user.UID] = user
 	return nil
 }
+func (s *Storage) GetUserByEmail(email string) (usersDomain.User, error) {
+	for _, u := range s.users {
+		if u.Email == email {
+			return u, nil
+		}
+	}
+
+	return usersDomain.User{}, errorsRepo.ErrUserNotFound
+}
 
 func (s *Storage) GetUsers() ([]usersDomain.User, error) {
 	users := make([]usersDomain.User, 0, len(s.users))
@@ -69,10 +78,12 @@ func (s *Storage) SaveTask(task tasksDomain.Task) error {
 	return nil
 }
 
-func (s *Storage) GetTasks() ([]tasksDomain.Task, error) {
+func (s *Storage) GetTasks(uid string) ([]tasksDomain.Task, error) {
 	tasks := make([]tasksDomain.Task, 0, len(s.tasks))
 	for _, t := range s.tasks {
-		tasks = append(tasks, t)
+		if t.UID == uid {
+			tasks = append(tasks, t)
+		}
 	}
 	return tasks, nil
 }

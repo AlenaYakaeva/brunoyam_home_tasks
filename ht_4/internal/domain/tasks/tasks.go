@@ -2,6 +2,7 @@ package tasks
 
 type Task struct {
 	TID         string
+	UID         string
 	Title       string
 	Description string
 	Status      Status
