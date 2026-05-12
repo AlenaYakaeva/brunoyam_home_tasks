@@ -36,7 +36,7 @@ func (s *Storage) GetTasks(uid string) ([]tasksDomain.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := s.conn.Query(ctx, "SELECT * FROM tasks WHERE uid = $1", uid)
+	rows, err := s.conn.Query(ctx, "SELECT tid, uid, title, description, status FROM tasks WHERE uid = $1", uid)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *Storage) GetTaskByID(tid string) (tasksDomain.Task, error) {
 	defer cancel()
 
 	var task tasksDomain.Task
-	err := s.conn.QueryRow(ctx, "SELECT * FROM tasks WHERE tid = $1", tid).Scan(&task.TID, &task.UID, &task.Title, &task.Description, &task.Status)
+	err := s.conn.QueryRow(ctx, "SELECT tid, uid, title, description, status FROM tasks WHERE tid = $1", tid).Scan(&task.TID, &task.UID, &task.Title, &task.Description, &task.Status)
 	//TODO ошибка не найденой задачи
 	if err != nil {
 		return tasksDomain.Task{}, err

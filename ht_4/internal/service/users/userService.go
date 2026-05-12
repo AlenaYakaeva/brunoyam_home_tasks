@@ -97,7 +97,11 @@ func (s *UserService) UpdateUser(req usersDomain.UpdateRequest, uid string) (use
 		return usersDomain.User{}, err
 	}
 	user.Name = req.Name
-	user.Password = req.Password
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return usersDomain.User{}, err
+	}
+	user.Password = string(hash)
 
 	err = s.repo.UpdateUser(user, uid)
 	if err != nil {
