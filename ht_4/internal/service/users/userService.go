@@ -11,11 +11,11 @@ import (
 )
 
 type Repository interface {
-	SaveUser(usersDomain.User) error
+	SaveUser(usersDomain.User) (string, error)
 	GetUsers() ([]usersDomain.User, error)
 	GetUserByID(string) (usersDomain.User, error)
 	GetUserByEmail(string) (usersDomain.User, error)
-	UpdateUser(usersDomain.User, string) (usersDomain.User, error)
+	UpdateUser(usersDomain.User, string) error
 	DeleteUser(string) error
 }
 type UserService struct {
@@ -47,7 +47,7 @@ func (s *UserService) RegisterUser(req usersDomain.RegisterRequest) (string, err
 		Password: string(hash),
 	}
 
-	if err := s.repo.SaveUser(user); err != nil {
+	if _, err := s.repo.SaveUser(user); err != nil {
 		return "", err
 	}
 	return user.UID, nil
@@ -99,11 +99,11 @@ func (s *UserService) UpdateUser(req usersDomain.UpdateRequest, uid string) (use
 	user.Name = req.Name
 	user.Password = req.Password
 
-	updateUser, err := s.repo.UpdateUser(user, uid)
+	err = s.repo.UpdateUser(user, uid)
 	if err != nil {
 		return usersDomain.User{}, err
 	}
-	return updateUser, nil
+	return user, nil
 }
 
 func (s *UserService) DeleteUser(uid string) error {

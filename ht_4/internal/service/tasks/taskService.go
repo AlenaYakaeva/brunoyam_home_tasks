@@ -10,7 +10,7 @@ import (
 )
 
 type Repository interface {
-	SaveTask(tasksDomain.Task) error
+	SaveTask(tasksDomain.Task) (string, error)
 	GetTasks(string) ([]tasksDomain.Task, error)
 	GetTaskByID(string) (tasksDomain.Task, error)
 	UpdateTask(tasksDomain.Task, string) (tasksDomain.Task, error)
@@ -42,10 +42,11 @@ func (s *TaskService) AddTask(uid string, req tasksDomain.AddUpdateRequest) (str
 		Status:      tasksDomain.ParseStatus(req.Status),
 	}
 
-	if err := s.repo.SaveTask(task); err != nil {
+	tid, err := s.repo.SaveTask(task)
+	if err != nil {
 		return "", err
 	}
-	return task.TID, nil
+	return tid, nil
 }
 
 func (s *TaskService) GetTasks(uid string) ([]tasksDomain.Task, error) {
