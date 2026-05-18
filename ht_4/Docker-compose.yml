@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgresql_pass
+      POSTGRES_DB: ToDoList
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - RENTAL_SERVICE_DB_DSN=postgres://postgres:postgresql_pass@db:5432/ToDoList?sslmode=disable
+    volumes:
+      - ./migration:/root/migration
+    depends_on:
+      - db
