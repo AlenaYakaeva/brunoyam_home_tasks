@@ -8,10 +8,10 @@ import (
 )
 
 type TaskService interface {
-	AddTask(tasksDomain.AddUpdateRequest) (string, error)
-	GetTasks() ([]tasksDomain.Task, error)
+	AddTask(string, tasksDomain.AddUpdateRequest) (string, error)
+	GetTasks(string) ([]tasksDomain.Task, error)
 	FindTaskByID(string) (tasksDomain.Task, error)
-	UpdateTask(tasksDomain.AddUpdateRequest, string) (tasksDomain.Task, error)
+	UpdateTask(tasksDomain.AddUpdateRequest, string, string) (tasksDomain.Task, error)
 	DeleteTask(string) error
 }
 
@@ -26,6 +26,13 @@ func NewTaskHandler(taskService TaskService) *TaskHandler {
 }
 
 func (uh *TaskHandler) AddTask(ctx *gin.Context) {
+	userID, ok := ctx.Get("uid")
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "missing token"})
+		return
+	}
+	uid := userID.(string)
+
 	var req tasksDomain.AddUpdateRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -33,7 +40,7 @@ func (uh *TaskHandler) AddTask(ctx *gin.Context) {
 		return
 	}
 
-	tid, err := uh.taskService.AddTask(req)
+	tid, err := uh.taskService.AddTask(uid, req)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -42,7 +49,14 @@ func (uh *TaskHandler) AddTask(ctx *gin.Context) {
 }
 
 func (uh *TaskHandler) GetTasks(ctx *gin.Context) {
-	tasks, err := uh.taskService.GetTasks()
+	userID, ok := ctx.Get("uid")
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "missing token"})
+		return
+	}
+	uid := userID.(string)
+
+	tasks, err := uh.taskService.GetTasks(uid)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -61,6 +75,13 @@ func (uh *TaskHandler) FindTaskByID(ctx *gin.Context) {
 }
 
 func (uh *TaskHandler) UpdateTask(ctx *gin.Context) {
+	userID, ok := ctx.Get("uid")
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "missing token"})
+		return
+	}
+	uid := userID.(string)
+
 	tid := ctx.Param("id")
 	var req tasksDomain.AddUpdateRequest
 
@@ -69,7 +90,7 @@ func (uh *TaskHandler) UpdateTask(ctx *gin.Context) {
 		return
 	}
 
-	task, err := uh.taskService.UpdateTask(req, tid)
+	task, err := uh.taskService.UpdateTask(req, tid, uid)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -19,14 +19,23 @@ func New() *Storage {
 }
 
 // ======Методы работы с пользователем=======
-func (s *Storage) SaveUser(user usersDomain.User) error {
+func (s *Storage) SaveUser(user usersDomain.User) (string, error) {
 	for _, u := range s.users {
 		if u.Email == user.Email {
-			return errorsRepo.ErrUserAlreadyExists
+			return "", errorsRepo.ErrUserAlreadyExists
 		}
 	}
 	s.users[user.UID] = user
-	return nil
+	return user.UID, nil
+}
+func (s *Storage) GetUserByEmail(email string) (usersDomain.User, error) {
+	for _, u := range s.users {
+		if u.Email == email {
+			return u, nil
+		}
+	}
+
+	return usersDomain.User{}, errorsRepo.ErrUserNotFound
 }
 
 func (s *Storage) GetUsers() ([]usersDomain.User, error) {
@@ -45,13 +54,13 @@ func (s *Storage) GetUserByID(uid string) (usersDomain.User, error) {
 	return user, nil
 }
 
-func (s *Storage) UpdateUser(user usersDomain.User, uid string) (usersDomain.User, error) {
+func (s *Storage) UpdateUser(user usersDomain.User, uid string) error {
 	_, err := s.users[uid]
 	if !err {
-		return usersDomain.User{}, errorsRepo.ErrUserNotFound
+		return errorsRepo.ErrUserNotFound
 	}
 	s.users[uid] = user
-	return user, nil
+	return nil
 }
 
 func (s *Storage) DeleteUser(uid string) error {
@@ -64,15 +73,17 @@ func (s *Storage) DeleteUser(uid string) error {
 }
 
 // ======Методы работы с задачами=======
-func (s *Storage) SaveTask(task tasksDomain.Task) error {
+func (s *Storage) SaveTask(task tasksDomain.Task) (string, error) {
 	s.tasks[task.TID] = task
-	return nil
+	return task.TID, nil
 }
 
-func (s *Storage) GetTasks() ([]tasksDomain.Task, error) {
+func (s *Storage) GetTasks(uid string) ([]tasksDomain.Task, error) {
 	tasks := make([]tasksDomain.Task, 0, len(s.tasks))
 	for _, t := range s.tasks {
-		tasks = append(tasks, t)
+		if t.UID == uid {
+			tasks = append(tasks, t)
+		}
 	}
 	return tasks, nil
 }

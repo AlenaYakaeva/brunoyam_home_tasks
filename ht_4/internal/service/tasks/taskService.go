@@ -10,8 +10,8 @@ import (
 )
 
 type Repository interface {
-	SaveTask(tasksDomain.Task) error
-	GetTasks() ([]tasksDomain.Task, error)
+	SaveTask(tasksDomain.Task) (string, error)
+	GetTasks(string) ([]tasksDomain.Task, error)
 	GetTaskByID(string) (tasksDomain.Task, error)
 	UpdateTask(tasksDomain.Task, string) (tasksDomain.Task, error)
 	DeleteTask(string) error
@@ -28,7 +28,7 @@ func New(repo Repository) *TaskService {
 	}
 }
 
-func (s *TaskService) AddTask(req tasksDomain.AddUpdateRequest) (string, error) {
+func (s *TaskService) AddTask(uid string, req tasksDomain.AddUpdateRequest) (string, error) {
 
 	if err := s.valid.Struct(req); err != nil {
 		return "", fmt.Errorf(errors.IncorrectFieldValues, err)
@@ -36,19 +36,21 @@ func (s *TaskService) AddTask(req tasksDomain.AddUpdateRequest) (string, error) 
 
 	task := tasksDomain.Task{
 		TID:         uuid.NewString(),
+		UID:         uid,
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      tasksDomain.ParseStatus(req.Status),
 	}
 
-	if err := s.repo.SaveTask(task); err != nil {
+	tid, err := s.repo.SaveTask(task)
+	if err != nil {
 		return "", err
 	}
-	return task.TID, nil
+	return tid, nil
 }
 
-func (s *TaskService) GetTasks() ([]tasksDomain.Task, error) {
-	users, err := s.repo.GetTasks()
+func (s *TaskService) GetTasks(uid string) ([]tasksDomain.Task, error) {
+	users, err := s.repo.GetTasks(uid)
 	if err != nil {
 		return []tasksDomain.Task{}, err
 	}
@@ -63,13 +65,14 @@ func (s *TaskService) FindTaskByID(tid string) (tasksDomain.Task, error) {
 	return task, nil
 }
 
-func (s *TaskService) UpdateTask(req tasksDomain.AddUpdateRequest, tid string) (tasksDomain.Task, error) {
+func (s *TaskService) UpdateTask(req tasksDomain.AddUpdateRequest, tid string, uid string) (tasksDomain.Task, error) {
 
 	if err := s.valid.Struct(req); err != nil {
 		return tasksDomain.Task{}, fmt.Errorf(errors.IncorrectFieldValues, err)
 	}
 	task := tasksDomain.Task{
 		TID:         tid,
+		UID:         uid,
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      tasksDomain.ParseStatus(req.Status),

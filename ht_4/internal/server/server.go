@@ -1,6 +1,8 @@
 package server
 
 import (
+	"ToDoList/internal/server/auth"
+	"ToDoList/internal/server/middleware"
 	"ToDoList/internal/server/tasks"
 	"ToDoList/internal/server/users"
 	"context"
@@ -38,7 +40,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func configureRouter(uh *users.UserHandler, th *tasks.TaskHandler) *gin.Engine {
 	r := gin.Default()
 
+	r.POST("/refresh", auth.Refresh)
 	users := r.Group("/users")
+	users.POST("/login", uh.Login)
 	users.POST("/", uh.Register)
 	users.GET("/", uh.GetUsers)
 	users.GET("/:id", uh.FindUserByID)
@@ -46,6 +50,7 @@ func configureRouter(uh *users.UserHandler, th *tasks.TaskHandler) *gin.Engine {
 	users.DELETE("/:id", uh.DeleteUser)
 
 	tasks := r.Group("/tasks")
+	tasks.Use(middleware.AuthMiddleware())
 	tasks.POST("/", th.AddTask)
 	tasks.GET("/", th.GetTasks)
 	tasks.GET("/:id", th.FindTaskByID)
