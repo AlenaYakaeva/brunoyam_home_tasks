@@ -18,13 +18,13 @@ func main() {
 	)
 	//dbDSN := "postgres://postgres:postgresql_pass@localhost:5432/ToDoList?sslmode=disable"
 	cfg := internal.ReadConfig()
-	repo := repository.New(cfg.DBDSN)
-	if repo.IsRemote {
-		usersService = users.New(repo.DB)
-		taskService = tasks.New(repo.DB)
-	} else {
+	repo, err := repository.New(cfg.DBDSN, 5)
+	if err != nil {
 		usersService = users.New(repo.MemStorage)
 		taskService = tasks.New(repo.MemStorage)
+	} else {
+		usersService = users.New(repo.DB)
+		taskService = tasks.New(repo.DB)
 	}
 
 	srv := server.New(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port), usersService, taskService)
