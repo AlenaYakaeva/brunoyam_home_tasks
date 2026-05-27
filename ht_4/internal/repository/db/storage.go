@@ -37,8 +37,9 @@ func RunMigrations(dbDSN string) error {
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			fmt.Println("no change")
+		} else {
+			return err
 		}
-		return err
 	}
 	fmt.Println("migrations complete")
 	return nil

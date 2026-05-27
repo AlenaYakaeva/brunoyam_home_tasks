@@ -4,33 +4,66 @@ import (
 	"ToDoList/internal/repository/db"
 	"ToDoList/internal/repository/memstorage"
 	"errors"
+	"time"
 
 	"github.com/golang-migrate/migrate"
 )
 
-type Repositury struct {
+type Repository struct {
 	DB         *db.Storage
 	MemStorage *memstorage.Storage
-	IsRemote   bool
 }
 
-func New(dbDSN string) *Repositury {
+func New(dbDSN string, maxAttempts int) (*Repository, error) {
 	MemStorage := memstorage.New()
-	isRemote := true
-	repo, err := db.New(dbDSN)
+	if dbDSN == "" {
+		return &Repository{
+			DB:         nil,
+			MemStorage: MemStorage,
+		}, errors.New("DBDSN is empty")
+	}
+	repo, err := ConnectWithRetry(dbDSN, maxAttempts)
 	if err != nil {
-		isRemote = false
+		return &Repository{
+			DB:         nil,
+			MemStorage: MemStorage,
+		}, errors.New("Connection faild")
 	} else {
 		if err = db.RunMigrations(dbDSN); err != nil {
 			if !errors.Is(err, migrate.ErrNoChange) {
-				isRemote = false
+
+				return &Repository{
+					DB:         nil,
+					MemStorage: MemStorage,
+				}, errors.New("Migration faild")
 			}
 		}
 	}
 
-	return &Repositury{
+	return &Repository{
 		DB:         repo,
 		MemStorage: MemStorage,
-		IsRemote:   isRemote,
+	}, nil
+}
+
+func ConnectWithRetry(dbDSN string, maxAttempts int) (*db.Storage, error) {
+	delay := 1 * time.Second
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+
+		repo, err := db.New(dbDSN)
+		if err != nil {
+
+			if attempt == maxAttempts {
+				return nil, err
+			}
+
+			time.Sleep(delay)
+			delay *= 2
+
+		} else {
+			return repo, nil
+		}
 	}
+	return nil, errors.New("Connection faild")
 }
