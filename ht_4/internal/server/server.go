@@ -39,6 +39,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 func configureRouter(uh *users.UserHandler, th *tasks.TaskHandler) *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.GzipCompressMiddleware())
 
 	r.POST("/refresh", auth.Refresh)
 	users := r.Group("/users")
