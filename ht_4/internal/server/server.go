@@ -6,7 +6,12 @@ import (
 	"ToDoList/internal/server/tasks"
 	"ToDoList/internal/server/users"
 	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,4 +63,23 @@ func configureRouter(uh *users.UserHandler, th *tasks.TaskHandler) *gin.Engine {
 	tasks.PUT("/:id", th.UpdateTask)
 	tasks.DELETE("/:id", th.DeleteTask)
 	return r
+}
+
+// Функция для graceful shutdown
+func WaitForShutdown(srv *Server, timeout time.Duration) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Блокировка до получения сигнала
+	sig := <-quit
+	fmt.Printf("Received signal: %v. Shutting down server...\n", sig)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		//log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	//log.Println("Server exiting")
 }

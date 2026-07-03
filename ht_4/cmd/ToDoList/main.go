@@ -9,6 +9,7 @@ import (
 	"ToDoList/internal/service/tasks"
 	"ToDoList/internal/service/users"
 	"fmt"
+	"time"
 )
 
 func main() {
@@ -25,11 +26,16 @@ func main() {
 	} else {
 		usersService = users.New(repo.DB)
 		taskService = tasks.New(repo.DB)
+		defer repo.DB.Close()
 	}
 
 	srv := server.New(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port), usersService, taskService)
 
-	if err := srv.Run(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := srv.Run(); err != nil {
+			panic(err)
+		}
+	}()
+
+	server.WaitForShutdown(srv, 5*time.Second)
 }

@@ -36,7 +36,7 @@ func (s *Storage) GetTasks(uid string) ([]tasksDomain.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := s.conn.Query(ctx, "SELECT tid, uid, title, description, status FROM tasks WHERE uid = $1", uid)
+	rows, err := s.conn.Query(ctx, "SELECT tid, uid, title, description, status FROM tasks WHERE uid = $1 and deleted=false", uid)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *Storage) GetTaskByID(tid string) (tasksDomain.Task, error) {
 	defer cancel()
 
 	var task tasksDomain.Task
-	err := s.conn.QueryRow(ctx, "SELECT tid, uid, title, description, status FROM tasks WHERE tid = $1", tid).Scan(&task.TID, &task.UID, &task.Title, &task.Description, &task.Status)
+	err := s.conn.QueryRow(ctx, "SELECT tid, uid, title, description, status FROM tasks WHERE tid = $1 and deleted=false", tid).Scan(&task.TID, &task.UID, &task.Title, &task.Description, &task.Status)
 	//TODO ошибка не найденой задачи
 	if err != nil {
 		return tasksDomain.Task{}, err
@@ -77,7 +77,7 @@ func (s *Storage) UpdateTask(task tasksDomain.Task, tid string) (tasksDomain.Tas
 		return tasksDomain.Task{}, errors.ErrTaskNotFound
 	}
 
-	_, err = s.conn.Exec(ctx, "UPDATE tasks SET title=$1, description=$2, status=$3 WHERE tid=$4", task.Title, task.Description, task.Status, tid)
+	_, err = s.conn.Exec(ctx, "UPDATE tasks SET title=$1, description=$2, status=$3 WHERE tid=$4 and deleted=false", task.Title, task.Description, task.Status, tid)
 	if err != nil {
 		return tasksDomain.Task{}, err
 	}
@@ -93,7 +93,7 @@ func (s *Storage) DeleteTask(tid string) error {
 		return errors.ErrTaskNotFound
 	}
 
-	_, err = s.conn.Exec(ctx, "DELETE from tasks WHERE tid=$1", tid)
+	_, err = s.conn.Exec(ctx, "UPDATE tasks SET deleted=true from tasks WHERE tid=$1", tid)
 	if err != nil {
 		return err
 	}
