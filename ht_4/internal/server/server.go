@@ -6,7 +6,6 @@ import (
 	"ToDoList/internal/server/tasks"
 	"ToDoList/internal/server/users"
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -72,7 +72,7 @@ func WaitForShutdown(srv *Server, timeout time.Duration) {
 
 	// Блокировка до получения сигнала
 	sig := <-quit
-	fmt.Printf("Received signal: %v. Shutting down server...\n", sig)
+	log.Printf("Received signal: %v. Shutting down server...\n", sig)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

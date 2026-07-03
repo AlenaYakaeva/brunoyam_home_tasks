@@ -10,6 +10,8 @@ import (
 	"ToDoList/internal/service/users"
 	"fmt"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -19,6 +21,7 @@ func main() {
 	)
 	//dbDSN := "postgres://postgres:postgresql_pass@localhost:5432/ToDoList?sslmode=disable"
 	cfg := internal.ReadConfig()
+	cfg.ConfigureLogger()
 	repo, err := repository.New(cfg.DBDSN, 5)
 	if err != nil {
 		usersService = users.New(repo.MemStorage)
@@ -31,11 +34,13 @@ func main() {
 
 	srv := server.New(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port), usersService, taskService)
 
+	log.Info().Msg("Запускаем сервер")
 	go func() {
 		if err := srv.Run(); err != nil {
-			panic(err)
+			log.Warn().Msg("Сервер завершил работу")
 		}
 	}()
 
 	server.WaitForShutdown(srv, 5*time.Second)
+	defer log.Info().Msg("Сервис завершил работу")
 }
