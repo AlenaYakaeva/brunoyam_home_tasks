@@ -93,9 +93,28 @@ func (s *Storage) DeleteTask(tid string) error {
 		return errors.ErrTaskNotFound
 	}
 
-	_, err = s.conn.Exec(ctx, "UPDATE tasks SET deleted=true from tasks WHERE tid=$1", tid)
+	_, err = s.conn.Exec(ctx, "UPDATE tasks SET deleted=true WHERE tid=$1", tid)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (s *Storage) DeleteMarkedTasks() error {
+	ctx := context.Background()
+
+	tx, err := s.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) // Откатит изменения, если будет ошибка
+
+	query := "DELETE FROM tasks WHERE deleted = true"
+	_, err = tx.Exec(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	// Фиксируем транзакцию
+	return tx.Commit(ctx)
 }

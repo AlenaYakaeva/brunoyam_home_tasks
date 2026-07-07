@@ -78,8 +78,7 @@ func WaitForShutdown(srv *Server, timeout time.Duration) {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		//log.Fatalf("Server forced to shutdown: %v", err)
+		log.Error().Err(err).Msg("Остановка работы сервера завершилась ошибкой")
 	}
 
-	//log.Println("Server exiting")
 }

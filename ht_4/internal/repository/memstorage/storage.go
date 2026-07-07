@@ -112,3 +112,7 @@ func (s *Storage) DeleteTask(tid string) error {
 	delete(s.tasks, tid)
 	return nil
 }
+
+func (s *Storage) DeleteMarkedTasks() error {
+	return nil
+}

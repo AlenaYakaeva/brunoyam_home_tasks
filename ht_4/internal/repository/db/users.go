@@ -11,7 +11,7 @@ func (s *Storage) GetUsers() ([]users.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := s.conn.Query(ctx, "SELECT uid,	name, email, password FROM users and deleted=false")
+	rows, err := s.conn.Query(ctx, "SELECT uid,	name, email, password FROM users where deleted=false")
 	if err != nil {
 		return nil, err
 	}

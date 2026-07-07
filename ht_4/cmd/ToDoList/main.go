@@ -8,13 +8,16 @@ import (
 	userService "ToDoList/internal/server/users"
 	"ToDoList/internal/service/tasks"
 	"ToDoList/internal/service/users"
+	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	var wg sync.WaitGroup
 	var (
 		usersService userService.UserService
 		taskService  taskService.TaskService
@@ -32,6 +35,16 @@ func main() {
 		defer repo.DB.Close()
 	}
 
+	// Контекст для фоновых воркеров
+	workerCtx, cancelWorkers := context.WithCancel(context.Background())
+
+	wg.Add(1)
+	// Запускаем фоновый воркер
+	go func() {
+		defer wg.Done()
+		taskService.StartLazyDeleter(workerCtx)
+	}()
+
 	srv := server.New(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port), usersService, taskService)
 
 	log.Info().Msg("Запускаем сервер")
@@ -43,4 +56,9 @@ func main() {
 
 	server.WaitForShutdown(srv, 5*time.Second)
 	defer log.Info().Msg("Сервис завершил работу")
+
+	cancelWorkers()
+
+	wg.Wait()
+
 }
