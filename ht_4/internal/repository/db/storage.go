@@ -3,12 +3,12 @@ package db
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 type Storage struct {
@@ -36,11 +36,11 @@ func RunMigrations(dbDSN string) error {
 	}
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
-			fmt.Println("no change")
+			log.Info().Msg("no change")
 		} else {
 			return err
 		}
 	}
-	fmt.Println("migrations complete")
+	log.Info().Msg("migrations complete")
 	return nil
 }

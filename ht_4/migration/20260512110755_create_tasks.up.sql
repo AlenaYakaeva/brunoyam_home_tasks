@@ -7,6 +7,7 @@ CREATE TABLE tasks(
     description TEXT,
     status   task_status DEFAULT '0' NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	deleted boolean DEFAULT false,
 
     CONSTRAINT fk_user FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
 )

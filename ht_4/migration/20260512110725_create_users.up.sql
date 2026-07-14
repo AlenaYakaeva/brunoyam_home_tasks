@@ -4,5 +4,6 @@ CREATE TABLE users(
 	name     TEXT NOT NULL,
 	email    TEXT UNIQUE NOT NULL,
 	password TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	deleted boolean DEFAULT false
 )

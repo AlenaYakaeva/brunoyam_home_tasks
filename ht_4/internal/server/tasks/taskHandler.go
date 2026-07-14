@@ -2,6 +2,7 @@ package tasks
 
 import (
 	tasksDomain "ToDoList/internal/domain/tasks"
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ type TaskService interface {
 	FindTaskByID(string) (tasksDomain.Task, error)
 	UpdateTask(tasksDomain.AddUpdateRequest, string, string) (tasksDomain.Task, error)
 	DeleteTask(string) error
+	StartLazyDeleter(ctx context.Context)
 }
 
 type TaskHandler struct {

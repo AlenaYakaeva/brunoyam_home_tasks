@@ -3,10 +3,12 @@ package tasks
 import (
 	tasksDomain "ToDoList/internal/domain/tasks"
 	"ToDoList/internal/service/errors"
+	"context"
 	"fmt"
 
 	validator "github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 type Repository interface {
@@ -15,16 +17,21 @@ type Repository interface {
 	GetTaskByID(string) (tasksDomain.Task, error)
 	UpdateTask(tasksDomain.Task, string) (tasksDomain.Task, error)
 	DeleteTask(string) error
+	DeleteMarkedTasks() error
 }
 type TaskService struct {
-	repo  Repository
-	valid *validator.Validate
+	repo        Repository
+	valid       *validator.Validate
+	deleteTasks chan struct{}
+	batchSize   int
 }
 
 func New(repo Repository) *TaskService {
 	return &TaskService{
-		repo:  repo,
-		valid: validator.New(),
+		repo:        repo,
+		valid:       validator.New(),
+		deleteTasks: make(chan struct{}, 15), //размер канала задан жестко, но можно передавать  размер при создании
+		batchSize:   10,
 	}
 }
 
@@ -90,5 +97,45 @@ func (s *TaskService) DeleteTask(tid string) error {
 	if err != nil {
 		return err
 	}
+	select {
+	case s.deleteTasks <- struct{}{}:
+	default:
+		log.Info().Msg("Канал заполнен, воркер уже в процессе или скоро начнет очистку")
+	}
+
 	return nil
+
+}
+
+func (s *TaskService) StartLazyDeleter(ctx context.Context) {
+	count := 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			close(s.deleteTasks)
+			for range s.deleteTasks {
+				count++
+			}
+			s.flushAndExecute(&count)
+			return
+
+		case <-s.deleteTasks:
+			count++
+			if count >= s.batchSize {
+				s.flushAndExecute(&count)
+			}
+		}
+	}
+}
+
+func (s *TaskService) flushAndExecute(count *int) {
+	if *count == 0 {
+		return
+	}
+
+	if err := s.repo.DeleteMarkedTasks(); err != nil {
+		log.Error().Err(err).Msg("Ошибка при выполнении DeleteMarkedTasks")
+	}
+	*count = 0
 }
